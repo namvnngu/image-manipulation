@@ -1,0 +1,14 @@
+# OpenMP 
+export OMP_NUM_THREADS=8
+g++ ParallelQuickSort.cpp -fopenmp -Wall -g -o gfg
+
+# MPI
+mpicxx SequentialMatrix.cpp -o out.o
+mpirun -np 5 [outfile]
+mpirun -np 4 -hostfile ./cluster ./[outputfile]
+mpicxx OpenCL_MPI.cpp -lOpenCL -o out.o
+
+# OpenCV
+g++ main.cpp -o output `pkg-config --cflags --libs opencv`
+
+
