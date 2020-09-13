@@ -21,6 +21,7 @@ int main(int argc, char** argv) {
   // }
 
   GBlur g(image_path);
+  g.blur_img(100);
   waitKey();
   return 0;
 }
