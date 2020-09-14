@@ -4,8 +4,8 @@
 using namespace cv;
 using namespace std;
 
-#ifndef GBLUR_H
-#define GBLUR_H
+#ifndef SHARP_H
+#define SHARP_H
 class GBlur {
     public:
         GBlur(string img_path);
@@ -20,4 +20,4 @@ class GBlur {
         Mat create_blur_kernel(int rows, int cols);
         double calculate_blur(int x, int y);
 };
-#endif // GBLUR_H
+#endif // SHARP_H 

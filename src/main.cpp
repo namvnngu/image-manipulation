@@ -1,5 +1,7 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/opencv.hpp>
+#include <opencv2/core.hpp>
+#include <opencv2/imgcodecs.hpp>
 #include <iostream>
 #include <string>
 #include "DFT.h"
@@ -20,8 +22,11 @@ int main(int argc, char** argv) {
   //   return -1;
   // }
 
+  // Gaussian Blur
   GBlur g(image_path);
-  g.blur_img(100);
+  g.blur_img(5);
+  g.export_img("export.jpg");
+
   waitKey();
   return 0;
 }

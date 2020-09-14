@@ -4,6 +4,8 @@
 #include <math.h>
 #include <opencv2/highgui.hpp>
 #include <opencv2/opencv.hpp>
+#include <opencv2/core.hpp>
+#include <opencv2/imgcodecs.hpp>
 #include <stdint.h>
 
 using namespace cv;
@@ -49,7 +51,8 @@ void GBlur::blur_img(double std_dev) {
     Mat blur_image_res;
     merge(output, 3, blur_image_res);
 
-    imshow("Blur",blur_image_res) ;
+    exported_image = blur_image_res;
+    imshow("Blur",blur_image_res);
 }
 
 Mat GBlur::create_blur_kernel(int rows, int cols) {
@@ -77,5 +80,10 @@ double GBlur::calculate_blur(int x, int y) {
     double e = exp(-(x*x + y*y)/(2.0*std_dev*std_dev));
     double coff = 1/(2.0*M_PI*std_dev*std_dev);
     return coff * e;
+}
+
+void GBlur::export_img(string file_name) {
+    string path = "./output/" + file_name;
+    imwrite(path, exported_image);
 }
 
