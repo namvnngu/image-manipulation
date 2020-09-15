@@ -6,18 +6,18 @@ using namespace std;
 
 #ifndef SHARP_H
 #define SHARP_H
-class GBlur {
+class Sharp {
     public:
-        GBlur(string img_path);
-        void blur_img(double std_dev);
-        void export_img(string path);
+        Sharp(string img_path);
+        void sharpen_img(double sharpen_force);
+        void export_img(string file_name);
 
     private:
         string img_path;
         Mat image, exported_image;
-        double std_dev;
 
-        Mat create_blur_kernel(int rows, int cols);
-        double calculate_blur(int x, int y);
+        Mat create_kernel(double sharpen_force);
+        int clip(int value);
+
 };
 #endif // SHARP_H 

@@ -6,6 +6,7 @@
 #include <string>
 #include "DFT.h"
 #include "GBlur.h"
+#include "Sharp.h"
 
 using namespace cv;
 using namespace std;
@@ -23,9 +24,14 @@ int main(int argc, char** argv) {
   // }
 
   // Gaussian Blur
-  GBlur g(image_path);
-  g.blur_img(5);
-  g.export_img("export.jpg");
+  GBlur g_blur(image_path);
+  g_blur.blur_img(20.0);
+  g_blur.export_img("blur.jpg");
+
+  // Sharpen
+  Sharp sharp(image_path);
+  sharp.sharpen_img(1);
+  sharp.export_img("sharp.jpg");
 
   waitKey();
   return 0;

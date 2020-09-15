@@ -35,15 +35,19 @@ void GBlur::blur_img(double std_dev) {
     // Carry out blur operation
     for(int r = offset; r < image.rows - offset; r++) {
         for(int c = offset; c < image.cols - offset; c++) {
+            double rgb[3] = {0, 0, 0};
             for(int x = 0; x < blur_kernel.rows; x++) {
                 for(int y = 0; y < blur_kernel.cols; y++) {
                     int rn = r + x - offset;
                     int cn = c + y - offset;
-                    output[0].at<uint8_t>(r, c) += uint8_t(split_channels[0].at<uint8_t>(rn,cn) * blur_kernel.at<double>(x,y));
-                    output[1].at<uint8_t>(r, c) += uint8_t(split_channels[1].at<uint8_t>(rn,cn) * blur_kernel.at<double>(x,y));
-                    output[2].at<uint8_t>(r, c) += uint8_t(split_channels[2].at<uint8_t>(rn,cn) * blur_kernel.at<double>(x,y));
+                    rgb[0] += split_channels[0].at<uint8_t>(rn,cn) * blur_kernel.at<double>(x,y);
+                    rgb[1] += split_channels[1].at<uint8_t>(rn,cn) * blur_kernel.at<double>(x,y);
+                    rgb[2] += split_channels[2].at<uint8_t>(rn,cn) * blur_kernel.at<double>(x,y);
                 }
             }
+            output[0].at<uint8_t>(r, c) = (int)(rgb[0]);
+            output[1].at<uint8_t>(r, c) = (int)(rgb[1]);
+            output[2].at<uint8_t>(r, c) = (int)(rgb[2]);
         }
     }
 
