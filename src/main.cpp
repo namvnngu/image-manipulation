@@ -17,21 +17,22 @@ int main(int argc, char** argv) {
   }
   string image_path = argv[1];
 
-  // Mat image = imread(image_path, CV_LOAD_IMAGE_UNCHANGED);
-  // if(!image.data) {
-  //   cout << "No image data\n";
-  //   return -1;
-  // }
+  Mat image = imread(image_path, CV_LOAD_IMAGE_COLOR);
+  if(!image.data) {
+    cout << "No image data\n";
+    return -1;
+  }
 
   // Gaussian Blur
-  GBlur g_blur(image_path);
-  g_blur.blur_img(20.0);
-  g_blur.export_img("blur.jpg");
+  Mat output;
+  GBlur g_blur;
+  g_blur.blur_img(image, output, 20.0);
+  imwrite("./output/blur.jpg", output);
 
   // Sharpen
-  Sharp sharp(image_path);
-  sharp.sharpen_img(1);
-  sharp.export_img("sharp.jpg");
+  Sharp sharp;
+  sharp.sharpen_img(image, output, 2);
+  imwrite("./output/sharp.jpg", output);
 
   waitKey();
   return 0;

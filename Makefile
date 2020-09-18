@@ -8,7 +8,7 @@ BIN_DIR = ./bin
 # Flags
 OPEN_CV_FLAG = `pkg-config --cflags --libs opencv`
 OPENMP_FLAG = -fopenmp
-CFLAGS = -O2 -Wall  -Iinclude 
+CFLAGS = -O2 -Wall -Wextra -Werror -pedantic -g -Iinclude 
 
 # Build
 OPENMP_BUILD = ${CXX} ${INPUT} ${OPENMP_FLAG} ${CFLAGS} -o ${BIN_DIR}/${OUTPUT}

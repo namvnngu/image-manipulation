@@ -8,14 +8,10 @@ using namespace std;
 #define SHARP_H
 class Sharp {
     public:
-        Sharp(string img_path);
-        void sharpen_img(double sharpen_force);
-        void export_img(string file_name);
+        Sharp();
+        void sharpen_img(Mat &input, Mat &ouput, double sharpen_force);
 
     private:
-        string img_path;
-        Mat image, exported_image;
-
         Mat create_kernel(double sharpen_force);
         int clip(int value);
 

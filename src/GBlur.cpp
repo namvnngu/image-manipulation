@@ -11,21 +11,14 @@
 using namespace cv;
 using namespace std;
 
-GBlur::GBlur(string img_path) : img_path(img_path) {
-    image = imread(img_path, CV_LOAD_IMAGE_COLOR);
-    if(!image.data) {
-        cout << "No image data\n";
-        exit(-1);
-    }
-    // imshow("Image", image);
-}
+GBlur::GBlur(){}
 
-void GBlur::blur_img(double std_dev) {
-    Mat output[3] = {Mat::zeros(image.size(), CV_8UC1), Mat::zeros(image.size(), CV_8UC1), Mat::zeros(image.size(), CV_8UC1)} ;
+void GBlur::blur_img(Mat &input, Mat &output, double std_dev) {
+    Mat image = input;
+    Mat processed_image[3] = {Mat::zeros(image.size(), CV_8UC1), Mat::zeros(image.size(), CV_8UC1), Mat::zeros(image.size(), CV_8UC1)} ;
 
     // Create blur matrix
-    this->std_dev = std_dev;
-    Mat blur_kernel = create_blur_kernel(5,5);
+    Mat blur_kernel = create_blur_kernel(5, 5, std_dev);
     int offset = blur_kernel.cols / 2;
 
     // Split channels
@@ -45,21 +38,17 @@ void GBlur::blur_img(double std_dev) {
                     rgb[2] += split_channels[2].at<uint8_t>(rn,cn) * blur_kernel.at<double>(x,y);
                 }
             }
-            output[0].at<uint8_t>(r, c) = (int)(rgb[0]);
-            output[1].at<uint8_t>(r, c) = (int)(rgb[1]);
-            output[2].at<uint8_t>(r, c) = (int)(rgb[2]);
+            processed_image[0].at<uint8_t>(r, c) = (int)(rgb[0]);
+            processed_image[1].at<uint8_t>(r, c) = (int)(rgb[1]);
+            processed_image[2].at<uint8_t>(r, c) = (int)(rgb[2]);
         }
     }
 
-    // Merge output to form blur image
-    Mat blur_image_res;
-    merge(output, 3, blur_image_res);
-
-    exported_image = blur_image_res;
-    imshow("Blur",blur_image_res);
+    // Merge processed_image to form blur image
+    merge(processed_image, 3, output);
 }
 
-Mat GBlur::create_blur_kernel(int rows, int cols) {
+Mat GBlur::create_blur_kernel(int rows, int cols, double std_dev) {
     Mat blur_kernel = Mat::zeros(Size(rows,cols), CV_64F);
     int half_c = blur_kernel.cols / 2;
     int half_r = blur_kernel.rows / 2;
@@ -68,7 +57,7 @@ Mat GBlur::create_blur_kernel(int rows, int cols) {
     // Generate kernel
     for(int i = 0; i < blur_kernel.rows; i++)
         for(int j = 0; j < blur_kernel.cols; j++) {
-            blur_kernel.at<double>(i,j) = calculate_blur(i-half_r, j-half_c);
+            blur_kernel.at<double>(i,j) = calculate_blur(i-half_r, j-half_c, std_dev);
             sum += blur_kernel.at<double>(i,j);
         }
     
@@ -80,14 +69,10 @@ Mat GBlur::create_blur_kernel(int rows, int cols) {
     return blur_kernel;
 }
 
-double GBlur::calculate_blur(int x, int y) {
+double GBlur::calculate_blur(int x, int y, double std_dev) {
     double e = exp(-(x*x + y*y)/(2.0*std_dev*std_dev));
     double coff = 1/(2.0*M_PI*std_dev*std_dev);
     return coff * e;
 }
 
-void GBlur::export_img(string file_name) {
-    string path = "./output/" + file_name;
-    imwrite(path, exported_image);
-}
 

@@ -11,17 +11,11 @@
 using namespace cv;
 using namespace std;
 
-Sharp::Sharp(string img_path) : img_path(img_path) {
-    image = imread(img_path, CV_LOAD_IMAGE_COLOR);
-    if(!image.data) {
-        cout << "No image data\n";
-        exit(-1);
-    }
-    // imshow("Image", image);
-}
+Sharp::Sharp(){}
 
-void Sharp::sharpen_img(double sharpen_force) {
-    Mat output[3] = {Mat::zeros(image.size(), CV_8UC1), Mat::zeros(image.size(), CV_8UC1), Mat::zeros(image.size(), CV_8UC1)} ;
+void Sharp::sharpen_img(Mat &input, Mat &output, double sharpen_force) {
+    Mat image = input; 
+    Mat processed_image[3] = {Mat::zeros(image.size(), CV_8UC1), Mat::zeros(image.size(), CV_8UC1), Mat::zeros(image.size(), CV_8UC1)} ;
     uint8_t t = 244;
     cout << t;
 
@@ -50,18 +44,14 @@ void Sharp::sharpen_img(double sharpen_force) {
                     rgb[2] += split_channels[2].at<uint8_t>(rn,cn) * kernel.at<double>(x,y);
                 }
             }
-            output[0].at<uint8_t>(r, c) = clip((int)(rgb[0]));
-            output[1].at<uint8_t>(r, c) = clip((int)(rgb[1]));
-            output[2].at<uint8_t>(r, c) = clip((int)(rgb[2]));
+            processed_image[0].at<uint8_t>(r, c) = clip((int)(rgb[0]));
+            processed_image[1].at<uint8_t>(r, c) = clip((int)(rgb[1]));
+            processed_image[2].at<uint8_t>(r, c) = clip((int)(rgb[2]));
         }
     }
 
-    // Merge output to form blur image
-    Mat sharpen_image_res;
-    merge(output, 3, sharpen_image_res);
-
-    exported_image = sharpen_image_res;
-    imshow("Sharpen", sharpen_image_res);
+    // Merge processed_image to form blur image
+    merge(processed_image, 3, output);
 }
 
 Mat Sharp::create_kernel(double sharpen_force) {
@@ -98,9 +88,4 @@ int Sharp::clip(int value) {
         return 0;
     else
         return value;
-}
-
-void Sharp::export_img(string file_name) {
-    string path = "./output/" + file_name;
-    imwrite(path, exported_image);
 }
