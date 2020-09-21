@@ -15,8 +15,10 @@
 using namespace cv;
 using namespace std;
 
-int divisor = 10;
+int divisor = 5;
 void visualize_grid(Mat &image);
+void extend_image(Mat &image);
+void shrink_image(Mat &image, int cols, int rows);
 
 int main(int argc, char** argv) {
   // Load images
@@ -29,12 +31,18 @@ int main(int argc, char** argv) {
     cout << "No image data\n";
     return -1;
   }
-
-  // Blur
+  
+  // Global variables
+  int cols = image.cols, rows = image.rows;
   OptimizedBlur g_blur;
   OptimizedSharp sharp;
   Mat output;
-  // g_blur.blur_img(image, output, 20);
+
+  // Extend temporarily the image by reflecting border 
+  // if the width and height is not divisible by divisor
+  extend_image(image);
+
+  // Split into blocks and apply blur operation on them
   for(int y = 0; y < image.cols; y += image.cols / divisor) 
     for(int x = 0; x < image.rows; x += image.rows / divisor) {
         Mat block(image, Rect(y, x, (image.cols / divisor), (image.rows / divisor)));
@@ -42,26 +50,12 @@ int main(int argc, char** argv) {
         block.copyTo(image(Rect(y, x, (image.cols / divisor), (image.rows / divisor))));
     }
 
+  // If the image was extended, shrink it back to original
+  shrink_image(image, cols, rows);
   imshow("Image", image);
   waitKey();
-  // // Gaussian Blur
-  // Mat output;
-  // OptimizedBlur g_blur;
-  // g_blur.blur_img(image, output, 20.0);
-  // imwrite("./output/blur.jpg", output);
 
-  // // Sharpen
-  // clock_t start = clock();
-
-  // optimizedsharp sharp;
-  // sharp.sharpen_img(image, output, 2);
-  // imwrite("./output/sharp.jpg", output);
-
-  // clock_t end = clock();
-  // double execution_time = double(end-start) / (CLOCKS_PER_SEC / divisor00);
-  // cout << "Time of gaining expected filtered image: " << execution_time << "ms\n";
-  // waitKey();
-  // return 0;
+  return 0;
 }
 void visualize_grid(Mat &image) {
   Mat mask_image = image.clone();
@@ -72,5 +66,26 @@ void visualize_grid(Mat &image) {
       waitKey(0);
     }
   }
+}
+void extend_image(Mat &image) {
+  Mat output;
+  int rows = image.rows;
+  int cols = image.cols;
+  int added_rows = rows, added_cols = cols;
+
+  while(added_rows % divisor != 0)
+    added_rows++;
+  while(added_cols % divisor != 0)
+    added_cols++;
+  
+  added_cols = added_cols - cols;
+  added_rows = added_rows - rows;
+
+  copyMakeBorder(image, output, 0, added_rows, 0, added_cols, BORDER_REFLECT);
+  image = output;
+}
+void shrink_image(Mat &image, int cols, int rows) {
+  Mat output = image(Rect(0,0,cols,rows));
+  image = output;
 }
 
