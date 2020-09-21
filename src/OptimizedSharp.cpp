@@ -1,4 +1,5 @@
-#include "Sharp.h"
+
+#include "OptimizedSharp.h"
 #include <iostream>
 #include <string>
 #include <math.h>
@@ -6,32 +7,33 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
+#include <omp.h>
 #include <stdint.h>
 
 using namespace cv;
 using namespace std;
 
-Sharp::Sharp(){}
+OptimizedSharp::OptimizedSharp(){}
 
-void Sharp::sharpen_img(Mat &input, Mat &output, double sharpen_force) {
-    Mat image = input; 
-    Mat processed_image[3] = {Mat::zeros(image.size(), CV_8UC1), Mat::zeros(image.size(), CV_8UC1), Mat::zeros(image.size(), CV_8UC1)} ;
+void OptimizedSharp::sharpen_img(Mat &input, Mat &output, double sharpen_force) {
+    Mat image = input;
+    int size = 3;
+    Mat processed_image[3] = {Mat::zeros(Size(image.cols + size * 2, image.rows + size * 2), CV_8UC1), Mat::zeros(Size(image.cols + size * 2, image.rows + size * 2), CV_8UC1), Mat::zeros(Size(image.cols + size * 2, image.rows + size * 2), CV_8UC1)} ;
+    Mat extended_image;
+    copyMakeBorder(image, extended_image, size, size, size, size, BORDER_REFLECT);
 
     // Create sharp kernel
     Mat kernel = create_kernel(sharpen_force);
     int offset = 1;
 
-    // OpenCV
-    // Mat sharpen_image_res;
-    // filter2D(image, sharpen_image_res, image.depth(), kernel);
-
     // Split channels
     Mat split_channels[3];
-    split(image, split_channels);
+    split(extended_image, split_channels);
 
     // Carry out sharp operation
-    for(int r = offset; r < image.rows - offset; r++) {
-        for(int c = offset; c < image.cols - offset; c++) {
+    // #pragma omp parallel
+    for(int r = offset; r < extended_image.rows - offset; r++) {
+        for(int c = offset; c < extended_image.cols - offset; c++) {
             double rgb[3] = {0, 0, 0};
             for(int x = 0; x < kernel.rows; x++) {
                 for(int y = 0; y < kernel.cols; y++) {
@@ -50,9 +52,10 @@ void Sharp::sharpen_img(Mat &input, Mat &output, double sharpen_force) {
 
     // Merge processed_image to form blur image
     merge(processed_image, 3, output);
+    input = output(Rect(size, size, image.cols, image.rows));
 }
 
-Mat Sharp::create_kernel(double sharpen_force) {
+Mat OptimizedSharp::create_kernel(double sharpen_force) {
     double x = -1 * sharpen_force;
     double y = (4 * sharpen_force) + 1;
     Mat kernel = Mat::zeros(Size(3,3), CV_64F);
@@ -79,7 +82,7 @@ Mat Sharp::create_kernel(double sharpen_force) {
     //         kernel[i][j] /= sum;
 }
 
-int Sharp::clip(int value) {
+int OptimizedSharp::clip(int value) {
     if (value >= 255) 
         return 255;
     else if (value <= 0) 
