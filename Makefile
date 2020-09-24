@@ -16,7 +16,7 @@ OPENCV_BUILD = ${CXX} ${INPUT} ${CFLAGS} -o ${BIN_DIR}/${OUTPUT} ${OPEN_CV_FLAG}
 
 # Commands
 clear: 
-	rm -rf ${BIN_DIR}/*.o ./output/*.jpg
+	rm -rf ${BIN_DIR}/*.o ./output/*.jpg ./output/*.avi
 build-omp: ${INPUT} ${HEADER}
 	@echo Building..
 	export OMP_NUM_THREADS=$(t) && ${OPENMP_BUILD}

@@ -31,24 +31,25 @@ void OptimizedSharp::sharpen_img(Mat &input, Mat &output, double sharpen_force) 
     split(extended_image, split_channels);
 
     // Carry out sharp operation
-    // #pragma omp parallel
-    for(int r = offset; r < extended_image.rows - offset; r++) {
-        for(int c = offset; c < extended_image.cols - offset; c++) {
-            double rgb[3] = {0, 0, 0};
-            for(int x = 0; x < kernel.rows; x++) {
-                for(int y = 0; y < kernel.cols; y++) {
-                    int rn = r + x - offset;
-                    int cn = c + y - offset;
-                    rgb[0] += split_channels[0].at<uint8_t>(rn,cn) * kernel.at<double>(x,y);
-                    rgb[1] += split_channels[1].at<uint8_t>(rn,cn) * kernel.at<double>(x,y);
-                    rgb[2] += split_channels[2].at<uint8_t>(rn,cn) * kernel.at<double>(x,y);
+    #pragma omp parallel for shared(extended_image) 
+        for(int r = offset; r < extended_image.rows - offset; r++) {
+            for(int c = offset; c < extended_image.cols - offset; c++) {
+                double rgb[3] = {0, 0, 0};
+                for(int x = 0; x < kernel.rows; x++) {
+                    for(int y = 0; y < kernel.cols; y++) {
+                        int rn = r + x - offset;
+                        int cn = c + y - offset;
+                        rgb[0] += split_channels[0].at<uint8_t>(rn,cn) * kernel.at<double>(x,y);
+                        rgb[1] += split_channels[1].at<uint8_t>(rn,cn) * kernel.at<double>(x,y);
+                        rgb[2] += split_channels[2].at<uint8_t>(rn,cn) * kernel.at<double>(x,y);
+                    }
                 }
+                processed_image[0].at<uint8_t>(r, c) = clip((int)(rgb[0]));
+                processed_image[1].at<uint8_t>(r, c) = clip((int)(rgb[1]));
+                processed_image[2].at<uint8_t>(r, c) = clip((int)(rgb[2]));
             }
-            processed_image[0].at<uint8_t>(r, c) = clip((int)(rgb[0]));
-            processed_image[1].at<uint8_t>(r, c) = clip((int)(rgb[1]));
-            processed_image[2].at<uint8_t>(r, c) = clip((int)(rgb[2]));
         }
-    }
+    
 
     // Merge processed_image to form blur image
     merge(processed_image, 3, output);
