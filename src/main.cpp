@@ -5,6 +5,8 @@
 #include <iostream>
 #include <string>
 #include <omp.h>
+#include <mpi.h>
+#include <stdlib.h>
 #include <vector>
 #include "DFT.h"
 #include "GBlur.h"
@@ -16,25 +18,36 @@
 using namespace cv;
 using namespace std;
 
-int divisor = 5;
+#define MASTER 0
+#define MASTER_TAG 1
+#define WORKER_TAG 2
+const int divisor = 10;
+const int MAX_BLOCKS = 1000000;
+string INPUT_FILE_NAME = "5.jpg";
+string INPUT_PATH = "./img/" + INPUT_FILE_NAME;
+Mat blocks[MAX_BLOCKS];
+
 void visualize_grid(Mat &image);
 void extend_image(Mat &image);
 void shrink_image(Mat &image, int cols, int rows);
 double process_image(Mat &image);
 void process_video(VideoCapture &video);
 
-int main(int argc, char** argv) {
+int main(int argc, char* argv[]) {
+  //////////////////////
+  //// OpenMP Only ////
+  ////////////////////
   /* 
     Image
   */
-  string image_path = argv[1];
-  if(argc <= 1) 
-    cout << "Please provide more arguments";
+  // string image_path = argv[1];
+  // if(argc <= 1) 
+  //   cout << "Please provide more arguments";
 
-  Mat image = imread(image_path, CV_LOAD_IMAGE_COLOR);
-  process_image(image);
-  imshow("Filtered", image);
-  imwrite("./output/output_image.jpg", image);
+  // Mat image = imread(image_path, CV_LOAD_IMAGE_COLOR);
+  // process_image(image);
+  // imshow("Filtered", image);
+  // imwrite("./output/output_image.jpg", image);
 
   /* 
     Video
@@ -45,6 +58,108 @@ int main(int argc, char** argv) {
   
   // VideoCapture cap(video_path);
   // process_video(cap);
+
+  
+  /////////////////////// 
+  //// MPI + OpenMP ////
+  /////////////////////
+
+  int num_process, process_id, num_node_workers;
+  int rows; // The number of rows sent from MASTER to Node Workers
+  int row_number; // The row number which Node Worker starts working from
+  int row_processed_by_worker, remainder_row;
+  int block_width, block_height;
+  double start, end;
+  Mat output, block;
+  MPI_Status status;
+  ostringstream s;
+
+  MPI_Init(&argc, &argv);
+  MPI_Comm_rank(MPI_COMM_WORLD, &process_id);
+  MPI_Comm_size(MPI_COMM_WORLD, &num_process);
+
+  // Number of node workers
+  num_node_workers = num_process - 1;
+
+  /* 
+   * MASTER Process
+   */
+  if(process_id == MASTER) {
+    printf("\nI am from MASTER\n");
+    printf("There are %d processes and %d node workers\n", num_process, num_node_workers);
+
+    // Load image
+    Mat image = imread(INPUT_PATH, CV_LOAD_IMAGE_COLOR);
+    if(!image.data) {
+      cout << "No image data\n";
+      return -1;
+    }
+    // Set up variables
+    int image_cols = image.cols, image_rows = image.rows;
+    OptimizedBlur g_blur;
+    OptimizedSharp sharp;
+
+    // Extend temporarily the image by reflecting border 
+    // if the width and height is not divisible by divisor
+    extend_image(image);
+    int new_cols = image.cols;
+    int new_rows = image.rows;
+    
+    // Start measuring execution time of multiplication operation
+    start = MPI_Wtime();
+
+    row_processed_by_worker = divisor / num_node_workers;
+    remainder_row = divisor % num_node_workers;    
+    row_number = 0;
+    block_width = new_cols;
+    block_height = new_rows / divisor;
+
+    for(int dest = 1; dest <= num_node_workers; dest++) {
+      rows = dest <= remainder_row ? row_processed_by_worker + 1 : row_processed_by_worker;
+
+      printf("\n%d rows are sent to node worker %d from row %d", rows, dest, row_number);
+
+      // Send the number of rows
+      MPI_Send(&rows, 1, MPI_INT, dest, MASTER_TAG, MPI_COMM_WORLD);
+      // Send the row number
+      MPI_Send(&row_number, 1, MPI_INT, dest, MASTER_TAG, MPI_COMM_WORLD);
+      // Send the block_width
+      MPI_Send(&block_width, 1, MPI_INT, dest, MASTER_TAG, MPI_COMM_WORLD);
+      // Send the block_height
+      MPI_Send(&block_height, 1, MPI_INT, dest, MASTER_TAG, MPI_COMM_WORLD);
+      // Send blocks
+      block = image(Rect(0, row_number * block_height, block_width, block_height * rows));
+      MPI_Send(block.data, rows * block_height * block_width * 3, MPI_BYTE, dest, MASTER_TAG, MPI_COMM_WORLD);
+
+      row_number += rows;
+    }
+
+
+    // Stop measuring execution time of multiplication operation
+    end = MPI_Wtime();
+    // Print execution time
+    double execution_time = double(end-start) * 1000;
+    printf("\nTime of gaining the filtered image: %f ms\n", execution_time);
+  }
+
+  /* 
+   * Node Worker
+   */
+  if(process_id != MASTER) {
+    printf("\nI am from Node %d\n", process_id);
+    MPI_Recv(&rows, 1, MPI_INT, MASTER, MASTER_TAG, MPI_COMM_WORLD, &status);
+    MPI_Recv(&row_number, 1, MPI_INT, MASTER, MASTER_TAG, MPI_COMM_WORLD, &status);
+    MPI_Recv(&block_width, 1, MPI_INT, MASTER, MASTER_TAG, MPI_COMM_WORLD, &status);
+    MPI_Recv(&block_height, 1, MPI_INT, MASTER, MASTER_TAG, MPI_COMM_WORLD, &status);
+    printf("Process %d starts from row number %d on image height x width %dx%d \n", process_id, row_number, block_height * rows, block_width);
+    
+    Mat test = Mat(block_height * rows, block_width, CV_8UC3);
+    MPI_Recv(test.data, rows * block_height * block_width * 3, MPI_BYTE, MASTER, MASTER_TAG, MPI_COMM_WORLD, &status);
+    
+    s << "./output/" << process_id << ".jpg";
+    imwrite(s.str(), test);
+  }
+  MPI_Finalize();
 
   return 0;
 }
