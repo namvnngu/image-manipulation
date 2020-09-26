@@ -116,7 +116,6 @@ int main(int argc, char* argv[]) {
 
     for(int dest = 1; dest <= num_node_workers; dest++) {
       rows = dest <= remainder_row ? row_processed_by_worker + 1 : row_processed_by_worker;
-
       printf("\n%d rows are sent to node worker %d from row %d", rows, dest, row_number);
 
       // Send the number of rows
@@ -146,13 +145,12 @@ int main(int argc, char* argv[]) {
    * Node Worker
    */
   if(process_id != MASTER) {
-    printf("\nI am from Node %d\n", process_id);
     MPI_Recv(&rows, 1, MPI_INT, MASTER, MASTER_TAG, MPI_COMM_WORLD, &status);
     MPI_Recv(&row_number, 1, MPI_INT, MASTER, MASTER_TAG, MPI_COMM_WORLD, &status);
     MPI_Recv(&block_width, 1, MPI_INT, MASTER, MASTER_TAG, MPI_COMM_WORLD, &status);
     MPI_Recv(&block_height, 1, MPI_INT, MASTER, MASTER_TAG, MPI_COMM_WORLD, &status);
-    printf("Process %d starts from row number %d on image height x width %dx%d \n", process_id, row_number, block_height * rows, block_width);
-    
+    printf("Node worker %d starts from row number %d on image height x width %dx%d \n", process_id, row_number, block_height * rows, block_width);
+
     Mat test = Mat(block_height * rows, block_width, CV_8UC3);
     MPI_Recv(test.data, rows * block_height * block_width * 3, MPI_BYTE, MASTER, MASTER_TAG, MPI_COMM_WORLD, &status);
     
