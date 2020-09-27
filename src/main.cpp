@@ -72,6 +72,8 @@ int main(int argc, char* argv[]) {
   double start, end;
   Mat output, block;
   MPI_Status status;
+  OptimizedBlur g_blur;
+  OptimizedSharp sharp;
   ostringstream s;
 
   MPI_Init(&argc, &argv);
@@ -80,6 +82,10 @@ int main(int argc, char* argv[]) {
 
   // Number of node workers
   num_node_workers = num_process - 1;
+  if(num_node_workers <= 0) {
+    printf("Please increase number of processes\n");
+    return 0;
+  }
 
   /* 
    * MASTER Process
@@ -96,8 +102,6 @@ int main(int argc, char* argv[]) {
     }
     // Set up variables
     int image_cols = image.cols, image_rows = image.rows;
-    OptimizedBlur g_blur;
-    OptimizedSharp sharp;
 
     // Extend temporarily the image by reflecting border 
     // if the width and height is not divisible by divisor
@@ -116,7 +120,7 @@ int main(int argc, char* argv[]) {
 
     for(int dest = 1; dest <= num_node_workers; dest++) {
       rows = dest <= remainder_row ? row_processed_by_worker + 1 : row_processed_by_worker;
-      printf("\n%d rows are sent to node worker %d from row %d", rows, dest, row_number);
+      printf("MASTER sent to Node worker %d with the starting row %d and the image heightxwidth %dx%d \n", dest, row_number, block_height * rows, block_width);
 
       // Send the number of rows
       MPI_Send(&rows, 1, MPI_INT, dest, MASTER_TAG, MPI_COMM_WORLD);
@@ -132,10 +136,44 @@ int main(int argc, char* argv[]) {
 
       row_number += rows;
     }
+    // Received filtered blocks from node workers
+    for(int dest = 1; dest <= num_node_workers; dest++) {
+      MPI_Recv(&rows, 1, MPI_INT, dest, WORKER_TAG, MPI_COMM_WORLD, &status);
+      MPI_Recv(&row_number, 1, MPI_INT, dest, WORKER_TAG, MPI_COMM_WORLD, &status);
+      printf("MASTER received from Node worker %d with the starting row %d and the image heightxwidth %dx%d \n", dest, row_number, block_height * rows, block_width);
 
+      block = Mat(block_height * rows, block_width, CV_8UC3);
+      MPI_Recv(block.data, rows * block_height * block_width * 3, MPI_BYTE, dest, WORKER_TAG, MPI_COMM_WORLD, &status);
 
+      // Merge filtered block image into the original image
+      ostringstream file_name;
+      file_name << "./output/" << dest << ".jpeg";
+      Mat m = imread(file_name.str(), CV_LOAD_IMAGE_COLOR);
+      block.copyTo(image(Rect(0, row_number * block_height, block_width, block_height * rows)));
+    }
     // Stop measuring execution time of multiplication operation
     end = MPI_Wtime();
+
+    vector<Mat> ms;
+    Mat new_image = Mat(new_rows, new_cols, CV_8UC3);
+    row_number = 0;
+    for(int dest = 1; dest <= num_node_workers; dest++) {
+      ostringstream file_name;
+      file_name << "./output/" << dest << ".jpeg";
+      Mat m = imread(file_name.str(), CV_LOAD_IMAGE_COLOR);
+      ms.push_back(m);
+
+
+      rows = dest <= remainder_row ? row_processed_by_worker + 1 : row_processed_by_worker;
+      ms[dest-1].copyTo(new_image(Rect(0, row_number * block_height, block_width, block_height * rows)));
+      row_number += rows;
+    }
+
+    // If the image was extended, shrink it back to original
+    shrink_image(new_image, image_cols, image_rows);
+    imshow("Filtered Image", new_image);
+    waitKey(0);
+
     // Print execution time
     double execution_time = double(end-start) * 1000;
     printf("\nTime of gaining the filtered image: %f ms\n", execution_time);
@@ -149,13 +187,22 @@ int main(int argc, char* argv[]) {
     MPI_Recv(&row_number, 1, MPI_INT, MASTER, MASTER_TAG, MPI_COMM_WORLD, &status);
     MPI_Recv(&block_width, 1, MPI_INT, MASTER, MASTER_TAG, MPI_COMM_WORLD, &status);
     MPI_Recv(&block_height, 1, MPI_INT, MASTER, MASTER_TAG, MPI_COMM_WORLD, &status);
-    printf("Node worker %d starts from row number %d on image height x width %dx%d \n", process_id, row_number, block_height * rows, block_width);
+    printf("Node worker %d received from MASTER with the starting row %d and the image heightxwidth %dx%d \n", process_id, row_number, block_height * rows, block_width);
 
-    Mat test = Mat(block_height * rows, block_width, CV_8UC3);
-    MPI_Recv(test.data, rows * block_height * block_width * 3, MPI_BYTE, MASTER, MASTER_TAG, MPI_COMM_WORLD, &status);
-    
-    s << "./output/" << process_id << ".jpg";
-    imwrite(s.str(), test);
+    block = Mat(block_height * rows, block_width, CV_8UC3);
+    MPI_Recv(block.data, rows * block_height * block_width * 3, MPI_BYTE, MASTER, MASTER_TAG, MPI_COMM_WORLD, &status);
+
+    // Apply filter on received image
+    g_blur.blur_img(block, output, 20);
+    // sharp.sharpen_img(block, output, 2);
+
+    printf("Node worker %d sent to MASTER with the starting row %d and the image heightxwidth %dx%d \n", process_id, row_number, block_height * rows, block_width);
+    MPI_Send(&rows, 1, MPI_INT, MASTER, WORKER_TAG, MPI_COMM_WORLD);
+    MPI_Send(&row_number, 1, MPI_INT, MASTER, WORKER_TAG, MPI_COMM_WORLD);
+    MPI_Send(block.data, rows * block_height * block_width * 3, MPI_BYTE, MASTER, WORKER_TAG, MPI_COMM_WORLD);
+
+    s << "./output/" << process_id << ".jpeg";
+    imwrite(s.str(), block);
   }
   MPI_Finalize();
 

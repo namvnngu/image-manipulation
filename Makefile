@@ -17,7 +17,7 @@ MPI_BUILD = mpicxx ${INPUT} ${OPENMP_FLAG} ${CFLAGS} -o ${BIN_DIR}/${OUTPUT} ${O
 
 # Commands
 clear: 
-	rm -rf ${BIN_DIR}/*.o ./output/*.jpg ./output/*.avi
+	rm -rf ${BIN_DIR}/*.o ./output/*.jpg ./output/*.avi ./output/*.jpeg
 build-omp: ${INPUT} ${HEADER}
 	@echo Building..
 	export OMP_NUM_THREADS=$(t) && ${OPENMP_BUILD}
