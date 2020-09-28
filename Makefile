@@ -1,7 +1,7 @@
 # Define constants
 CXX = g++
 INPUT = ./src/*.cpp 
-OUTPUT = output.o
+OUTPUT = putput.o
 HEADER = ./include/*.h 
 BIN_DIR = ./bin
 
@@ -32,5 +32,7 @@ build: ${INPUT} ${HEADER}
 	@echo Building complete
 run: ${BIN_DIR}/${OUTPUT}
 	mpirun -np ${n} ${BIN_DIR}/${OUTPUT}
+run-omp:
+	${BIN_DIR}/${OUTPUT} $(s)
 
 
