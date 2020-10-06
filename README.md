@@ -1,10 +1,17 @@
+<p align="center">
+    <img src="logo.svg" />
+</p>
+
 # Image Manipulation 🏞️
-__Features__: 
-  - Blur
-  - Sharpen
-  - Edge Detection
-  
-__Library__:
-  - OpenCV (Computer Vision)
-  - OpenMP (Parallel)
-  - MPI (Distributed Computing)
+
+**Features**:
+
+- Blur
+- Sharpen
+- Edge Detection
+
+**Library**:
+
+- OpenCV (Computer Vision)
+- OpenMP (Parallel)
+- MPI (Distributed Computing)

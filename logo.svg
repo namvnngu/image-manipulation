@@ -1,0 +1,14 @@
+<svg width="208" height="149" viewBox="0 0 208 149" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M151.993 113.811L201 113" stroke="#2F855A" stroke-width="12.6667" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M7 113L56.7926 113.745" stroke="#2F855A" stroke-width="12.6667" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M147 50.8592L103.889 7.14151L63.2225 53.1423" stroke="#C53030" stroke-width="12.6667" stroke-linecap="round" stroke-linejoin="round"/>
+<mask id="path-4-inside-1" fill="white">
+<rect x="54" y="49" width="100" height="100" rx="4"/>
+</mask>
+<rect x="54" y="49" width="100" height="100" rx="4" stroke="#C53030" stroke-width="20" mask="url(#path-4-inside-1)"/>
+<rect x="23.5" y="79.5" width="26" height="27" stroke="#2B6CB0" stroke-width="3"/>
+<rect x="168.5" y="79.5" width="26" height="27" stroke="#2B6CB0" stroke-width="3"/>
+<path d="M70 109.5L86 88L101 109.5L117 86L133.5 109.5L140 88" stroke="#CBD5E0"/>
+<path d="M33 91C40.5 100 44 90 43 88.5M43 88.5C42.2 87.3 32.6667 86.3333 28 86L30 96.5L37.5 100H43V88.5Z" stroke="#C05621"/>
+<path d="M182 88L183.123 91.4549H186.755L183.816 93.5902L184.939 97.0451L182 94.9098L179.061 97.0451L180.184 93.5902L177.245 91.4549H180.877L182 88Z" fill="#F6E05E"/>
+</svg>
