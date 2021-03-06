@@ -8,7 +8,6 @@
 
 - Blur
 - Sharpen
-- Edge Detection
 
 **Library**:
 
