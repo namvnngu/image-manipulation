@@ -1,7 +1,3 @@
-<p align="center">
-    <img src="logo.svg" />
-</p>
-
 # Image Manipulation 🏞️
 
 **Features**:
